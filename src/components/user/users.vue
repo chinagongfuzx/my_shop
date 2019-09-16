@@ -46,7 +46,12 @@
               ></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">
-              <el-button type="warning" icon="el-icon-setting" size="small"></el-button>
+              <el-button
+                type="warning"
+                icon="el-icon-setting"
+                size="small"
+                @click="rolePut(scope.row)"
+              ></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -100,6 +105,25 @@
         <el-button type="primary" @click="edituser">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog title="提示" :visible.sync="roleDialogVisible" width="30%">
+      <p>当前的用户:{{uname}}</p>
+      <p>当前的角色:{{rolename}}</p>
+      <p>
+        分配新角色
+        <el-select v-model="roleById" placeholder="请选择">
+          <el-option
+            v-for="item in roleList"
+            :key="item.id"
+            :label="item.roleName"
+            :value="item.id"
+          ></el-option>
+        </el-select>
+      </p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="roleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="roleEdit">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -109,6 +133,8 @@ import { useradd_api } from "../../api/index.js"
 import { userEdit_api } from "../../api/index.js"
 import { userEditAdd_api } from "../../api/index.js"
 import { userDel_api } from "../../api/index.js"
+import { rolesGet_api } from "../../api/index.js"
+import { rolesUserEdit_api } from "../../api/index.js"
 
 export default {
   data() {
@@ -170,7 +196,13 @@ export default {
           { validator: checkTel, trigger: "blur" }
         ]
       },
-      editDialogVisible: false
+      editDialogVisible: false,
+      roleDialogVisible: false,
+      uname: "",
+      rolename: "",
+      roleList: [],
+      roleById: "",
+      userId: ""
     }
   },
   created() {
@@ -259,6 +291,21 @@ export default {
       }
       const { data: res } = await userDel_api(id)
       this.getUserList()
+    },
+    async rolePut(roled) {
+      this.roleDialogVisible = true
+      this.uname = roled.username
+      this.rolename = roled.role_name
+      this.userId = roled.id
+      const { data: res } = await rolesGet_api()
+      this.roleList = res.data
+    },
+    async roleEdit() {
+      const { data: res } = await rolesUserEdit_api(this.userId, this.roleById)
+      if (res.meta.status !== 200) return this.$message.error("更新角色失败")
+      this.$message.success("更新角色成功")
+      this.getUserList()
+      this.roleDialogVisible = false
     }
   }
 }
